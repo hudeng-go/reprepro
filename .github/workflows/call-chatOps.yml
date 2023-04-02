@@ -5,6 +5,6 @@ on:
 
 jobs:
   chatopt:
-    uses: deepin-community/.github/.github/workflows/chatOps.yml@master
+    uses: hudeng-go/.github/.github/workflows/chatOps.yml@master
     secrets:
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
