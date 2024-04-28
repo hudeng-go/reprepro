@@ -5,15 +5,15 @@ Subject: [PATCH] feat: add ignore source checksum option support
 
 ---
  downloadcache.c | 26 ++++++++++++++++-------
- files.c         |  4 ++--
+ files.c         |  6 ++++--
  upgradelist.c   | 55 +++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 76 insertions(+), 9 deletions(-)
+ 3 files changed, 78 insertions(+), 9 deletions(-)
 
-Index: reprepro/downloadcache.c
-===================================================================
---- reprepro.orig/downloadcache.c
-+++ reprepro/downloadcache.c
-@@ -126,13 +126,25 @@ static retvalue downloaditem_callback(en
+diff --git a/downloadcache.c b/downloadcache.c
+index a51f4e5..720cbb8 100644
+--- a/downloadcache.c
++++ b/downloadcache.c
+@@ -126,13 +126,25 @@ static retvalue downloaditem_callback(enum queue_action action, void *privdata,
  	assert (checksums != NULL);
  
  	if (!checksums_check(d->checksums, checksums, &improves)) {
@@ -46,25 +46,27 @@ Index: reprepro/downloadcache.c
  	}
  	if (improves) {
  		r = checksums_combine(&d->checksums, checksums, NULL);
-Index: reprepro/files.c
-===================================================================
---- reprepro.orig/files.c
-+++ reprepro/files.c
-@@ -136,8 +136,8 @@ retvalue files_canadd(const char *fileke
+diff --git a/files.c b/files.c
+index 0f3b618..06a7350 100644
+--- a/files.c
++++ b/files.c
+@@ -136,8 +136,10 @@ retvalue files_canadd(const char *filekey, const struct checksums *checksums) {
  "File \"%s\" is already registered with different checksums!\n",
  				filekey);
  		checksums_printdifferences(stderr, indatabase, checksums);
 -		checksums_free(indatabase);
 -		return RET_ERROR_WRONG_MD5;
-+		// checksums_free(indatabase);
-+		// return RET_ERROR_WRONG_MD5;
++		if (getenv("IGNORECHECKSUM")==NULL) {
++		    checksums_free(indatabase);
++		    return RET_ERROR_WRONG_MD5;
++		}
  
  	}
  	// TODO: sometimes the caller might want to have additional
-Index: reprepro/upgradelist.c
-===================================================================
---- reprepro.orig/upgradelist.c
-+++ reprepro/upgradelist.c
+diff --git a/upgradelist.c b/upgradelist.c
+index be82173..a337b41 100644
+--- a/upgradelist.c
++++ b/upgradelist.c
 @@ -30,6 +30,9 @@
  #include "descriptions.h"
  #include "package.h"
@@ -75,7 +77,7 @@ Index: reprepro/upgradelist.c
  
  struct package_data {
  	struct package_data *next;
-@@ -679,6 +682,58 @@ retvalue upgradelist_install(struct upgr
+@@ -679,6 +682,58 @@ retvalue upgradelist_install(struct upgradelist *upgrade, struct logger *logger,
  
  			r = files_checkorimprove(&pkg->new_filekeys,
  					pkg->new_origfiles.checksums);
@@ -134,3 +136,5 @@ Index: reprepro/upgradelist.c
  			if (! RET_WAS_ERROR(r)) {
  
  				r = upgrade->target->completechecksums(
+--
+2.33.1
